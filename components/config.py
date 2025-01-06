@@ -20,5 +20,3 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     
     return config
 
-# For backwards compatibility
-DEFAULT_CONFIG = load_config()

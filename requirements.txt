@@ -1,0 +1,11 @@
+accelerate
+datasets
+safetensors
+transformers
+trl==0.12.2
+hf_transfer
+peft 
+bitsandbytes
+tensorflow
+tf-keras
+wheel

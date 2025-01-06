@@ -1,7 +1,7 @@
 import os
 import modal
 from pathlib import Path
-from components.config import DEFAULT_CONFIG
+from components.config import load_config
 from components.models import load_models
 from components.dataset import DistillationDataset
 from components.trainer import LogitsTrainer
@@ -30,10 +30,7 @@ app = modal.App(name="distill-logits", image=image)
     volumes={VOL_MOUNT_PATH: output_vol},
     secrets=[modal.Secret.from_name("huggingface-secret")]
 )
-def train(config=None):
-    if config is None:
-        config = DEFAULT_CONFIG
-    
+def train(config):    
     # Load models and tokenizer
     models = load_models(config)
     student_model = models["student_model"]
@@ -97,7 +94,7 @@ def train(config=None):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, help='Path to config file')
+    parser.add_argument('--config', type=str, default="config/default_config.json", help='Path to config file')
     args = parser.parse_args()
     
     config = load_config(args.config)  # Will load default if args.config is None

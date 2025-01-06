@@ -1,12 +1,13 @@
 import os
 import modal
 import torch
+import argparse
 from tqdm import tqdm
 from pathlib import Path
 import tensorflow as tf
-from datasets import load_from_disk, Dataset
+from datasets import load_from_disk, load_dataset
 
-from components.config import DEFAULT_CONFIG
+from components.config import load_config
 from components.formatters import comparison_format
 from components.models import setup_tokenizer, load_base_model, load_adapter
 
@@ -50,8 +51,32 @@ def generate_logits_for_batch(model, sequences, max_seq_len, tokenizer):
         with torch.no_grad():
             outputs = model(**inputs)
             logits = outputs.logits
-
+    
     return logits
+
+def load_dataset(config): 
+    if config["dataset"]["split"] is None: 
+        dataset = load_from_disk(config["dataset"]["name"])
+    else: 
+        dataset = load_dataset(config["dataset"]["name"], split=config["dataset"]["split"])
+    tokenizer = setup_tokenizer(config["models"]["teacher"], config)
+    
+    dataset = dataset.map(
+        comparison_format(tokenizer),
+        batched=True,
+    )
+    
+    num_samples = config["dataset"]["num_samples"]
+    select_range = config["dataset"].get("select_range")
+    if num_samples:
+        if select_range:
+            samples_to_select = list(range(select_range[0], select_range[1]))
+            assert num_samples == len(samples_to_select)
+            dataset = dataset.select(samples_to_select)
+        else: 
+            dataset = dataset.select(range(num_samples))
+    
+    return dataset
 
 @app.function(
     gpu=modal.gpu.A100(count=1, size="80GB"),
@@ -59,14 +84,12 @@ def generate_logits_for_batch(model, sequences, max_seq_len, tokenizer):
     volumes={VOL_MOUNT_PATH: output_vol},
     secrets=[modal.Secret.from_name("huggingface-secret")]
 )
-def gen_logits(dataset, config=None):
-    if config is None:
-        config = DEFAULT_CONFIG
-
+def gen_logits(config):
+    dataset = load_dataset(config)
+    
     config.update({
         "hf_token": os.environ["HF_TOKEN"]
-    })    
-    dataset = Dataset.from_list(dataset)
+    })
     
     # Setup tokenizer and model
     tokenizer = setup_tokenizer(config["models"]["teacher"], config)
@@ -77,7 +100,7 @@ def gen_logits(dataset, config=None):
 
     batch_size = 1
     max_seq_len = config["tokenizer"]["max_length"]
-    file_name = os.path.join(VOL_MOUNT_PATH, "lora_model/distillation_logits-debug.tfrecord")
+    file_name = config["dataset"]["logits_file"]
     
     try:
         with tf.io.TFRecordWriter(file_name) as writer:
@@ -106,24 +129,14 @@ def gen_logits(dataset, config=None):
         output_vol.commit()
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, help='Path to config file')
+    parser.add_argument('--config', type=str, default="config/default_config.json", help='Path to config file')
     args = parser.parse_args()
     
     config = load_config(args.config)  # Will load default if args.config is None
-    
-    dataset = load_from_disk("/Users/agokrani/Documents/experiments/aideml/wsdm/wsdm2024-cot-dataset/shard_0")
-    tokenizer = setup_tokenizer(config["models"]["teacher"], config)
-    
-    dataset = dataset.map(
-        comparison_format(tokenizer),
-        batched=True,
-    )
-    select_indices = list(range(100,101))
-    
+
     with app.run():    
-        gen_logits.remote(dataset.select(select_indices).to_list())
+        gen_logits.remote(config)
 
 if __name__ == "__main__":
     main()
