@@ -16,7 +16,8 @@ def train(config):
     student_tokenizer = models["student_tokenizer"]
     teacher_model = models.get("teacher_model")
     
-    # Get teacher vocab size
+    # Ideally teacher vocab size should be provided in the config file. If not we will infer it from teacher model or student model depending on 
+    # the configuration. Note: If teacher model is not loaded due to logits file. It will be inferred from student model.
     if config["models"]["teacher_vocab_size"] is not None: 
         teacher_vocab_size = config["models"]["teacher_vocab_size"]    
     elif teacher_model is not None:

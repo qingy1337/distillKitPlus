@@ -1,0 +1,4 @@
+.aider*
+.env
+config/configs_local/*
+distillKitPlus.egg-info/*

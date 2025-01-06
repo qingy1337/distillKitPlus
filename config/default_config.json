@@ -1,17 +1,17 @@
 {
     "project_name": "distil-logits",
     "dataset": {
-        "name": "/vol/wsdm2024-cot-dataset/shard_0",
-        "split": null,
-        "logits_file": "/vol/lora_model/distillation_logits-debug.tfrecord",
-        "num_samples": 1,
-        "select_range": [100,101]
+        "name": "ruggsea/wsdm2024-cot-dataset",
+        "split": "train",
+        "logits_file": "distillation_logits.tfrecord",
+        "num_samples": 100,
+        "select_range": null
     },
     "models": {
         "teacher": "meta-llama/Llama-3.1-70B-Instruct",
         "student": "meta-llama/Llama-3.1-8B-Instruct",
-        "student_adapter": "/vol/lora_model/checkpoint-6016",
-        "teacher_adapter": "/vol/lora_model/final-checkpoint-200",
+        "student_adapter": null,
+        "teacher_adapter": null,
         "teacher_vocab_size": null
     },
     "tokenizer": {
@@ -20,7 +20,7 @@
         "pad_token_id": 128001
     },
     "training": {
-        "output_dir": "/vol/distilled_model/debug",
+        "output_dir": "distilled_model",
         "num_train_epochs": 4,
         "per_device_train_batch_size": 1,
         "gradient_accumulation_steps": 1,

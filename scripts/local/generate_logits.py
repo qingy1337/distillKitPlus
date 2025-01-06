@@ -59,9 +59,13 @@ def load_dataset(config):
 def gen_logits(config):
     dataset = load_dataset(config)
     
+    config.update({
+        "hf_token": os.environ["HF_TOKEN"]
+    })
+    
     # Setup tokenizer and model
     tokenizer = setup_tokenizer(config["models"]["teacher"], config)
-    model = load_base_model(config["models"]["teacher"], config)
+    model = load_base_model(config["models"]["teacher"], config, cache_dir="/vol/base_model", save_base_model_to_cache=True)
     
     if config["models"]["teacher_adapter"]:
         model = load_adapter(model, config["models"]["teacher_adapter"])
