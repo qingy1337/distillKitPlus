@@ -359,29 +359,34 @@ class LogitsTrainer(SFTTrainer):
 
         return config["distillation"]["alpha"] * loss_kd + (1 - config["distillation"]["alpha"]) * original_loss
 
-# # Training arguments
-training_arguments = SFTConfig(**config["training"])
-training_arguments.max_seq_length=config["tokenizer"]["max_length"]
-training_arguments.remove_unused_columns=False
+    # Set up training arguments
+    training_arguments = SFTConfig(**config["training"])
+    training_arguments.max_seq_length = config["tokenizer"]["max_length"]
+    training_arguments.remove_unused_columns = False
+    training_arguments.temperature = config["distillation"]["temperature"]
+    training_arguments.alpha = config["distillation"]["alpha"]
 
-# # Create the custom SFT Trainer
-trainer = LogitsTrainer(
-    model=student_model,
-    train_dataset=dataset,
-    tokenizer=student_tokenizer,
-    data_collator=DataCollatorForCompletionOnlyLM("<|im_start|>assistant\n", tokenizer=student_tokenizer),
-    args=training_arguments,
-)
+    # Initialize trainer
+    trainer = LogitsTrainer(
+        model=student_model,
+        train_dataset=dataset,
+        tokenizer=student_tokenizer,
+        data_collator=DataCollatorForCompletionOnlyLM("<|im_start|>assistant\n", tokenizer=student_tokenizer),
+        args=training_arguments,
+    )
 
-# # Add the teacher model to the trainer       
-if config["models"]["teacher"] is not None and config["dataset"]["logits_file"] is None:
-    trainer.teacher_model = teacher_model
+    # Add teacher model if needed
+    if teacher_model is not None:
+        trainer.teacher_model = teacher_model
 
-# # Prepare for distributed training
-trainer = accelerator.prepare(trainer)
+    # Prepare for distributed training
+    trainer = accelerator.prepare(trainer)
 
-# # Train the model
-trainer.train(resume_from_checkpoint=config["training"]["resume_from_checkpoint"])
+    # Train the model
+    trainer.train(resume_from_checkpoint=config["training"]["resume_from_checkpoint"])
 
-# # Save the final model
-trainer.save_model(config["training"]["output_dir"])
+    # Save the final model
+    trainer.save_model(config["training"]["output_dir"])
+
+if __name__ == "__main__":
+    main()
