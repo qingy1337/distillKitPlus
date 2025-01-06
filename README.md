@@ -1,6 +1,8 @@
 # DistillKitPlus
 
-DistillKit is an open-source toolkit for doing knowledge distillation (KLD). The repo was inspired by acree-ai/DistillKit. The main motivation behind the toolkit was to support offline distillation and PEFT for low computation resource settings. 
+DistillKit is an open-source toolkit for doing knowledge distillation (KLD). The repo was inspired by [acree-ai/DistillKit](https://github.com/arcee-ai/DistillKit/tree/main). The main motivation behind the toolkit was to support offline distillation and PEFT for low computation resource settings. 
+
+![https://arxiv.org/abs/2006.05525](https://i0.wp.com/neptune.ai/wp-content/uploads/2022/10/Knowledge-Distillation_1.png?ssl=1)
 
 # Features
 
@@ -68,7 +70,7 @@ See `config/default_config.json` for a complete example.
 
 We welcome contributions from the community! If you have ideas for improvements, new features, or bug fixes, please feel free to open an issue or submit a pull request.
 
-## Citation
+## Contact
 
 For any technical questions or issues, please open an issue in this repository. We appreciate your feedback and support!
 
