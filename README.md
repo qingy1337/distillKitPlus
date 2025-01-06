@@ -1,36 +1,52 @@
 # DistillKitPlus
 
-A powerful toolkit for knowledge distillation of Large Language Models (LLMs) using logits.
+DistillKit is an open-source toolkit for doing knowledge distillation (KLD). The repo was inspired by acree-ai/DistillKit. The main motivation behind the toolkit was to support offline distillation and PEFT for low computation resource settings. 
 
-## Features
+# Features
 
-- Support for teacher-student knowledge distillation
-- Pre-computed logits support for memory-efficient training
-- LoRA fine-tuning integration
-- Quantization support (4-bit, 8-bit)
-- Flash Attention 2 support
-- Flexible dataset formatting
-- Support for various model architectures
+- **Logit Distillation**: Supports same-architecture teacher and student models.
+- **Pre-Computed Logits**: Enables memory-efficient training by generating logits in advance.
+- **LoRA Fine-Tuning Integration**: Efficient low-rank adaptation fine-tuning support.
+- **Quantization Support**: 4-bit model quantization for faster inference and reduced memory usage.
 
-## Installation
+
+
+# Installation
 
 ```bash
-git clone https://github.com/yourusername/distillkitplus.git
+git clone https://github.com/agokrani/distillkitplus.git
 cd distillkitplus
 pip install -r requirements.txt
+pip install .
 ```
 
-## Quick Start
 
-1. Configure your distillation settings in `config/default_config.json`
-2. Generate teacher logits:
-```bash
-python scripts/local/generate_logits.py --config config/default_config.json
-```
-3. Run distillation:
-```bash
-python scripts/local/distill_logits.py --config config/default_config.json
-```
+# Quick Start
+
+- Configure your distillation settings in `config/default_config.json`
+- Generate teacher logits:
+    ```bash
+    python scripts/local/generate_logits.py --config config/default_config.json
+    ```
+- Run distillation:
+    ```bash
+    python scripts/local/distill_logits.py --config config/default_config.json
+    ```
+
+### Optional: Modal Integration
+
+DistillKitPlus also supports running scripts using **Modal**. Follow the steps below to perform knowledge distillation with Modal.
+
+Use the following command to generate pre-computed logits with Modal:
+
+- Generate teacher logits:
+    ```bash
+    python scripts/modal/generate_logits.py --config config/default_config.json
+    ```
+- Run distillation:
+    ```bash
+    python scripts/modal/distill_logits.py --config config/default_config.json
+    ```
 
 ## Configuration
 
@@ -47,62 +63,12 @@ The toolkit uses a JSON configuration file with the following main sections:
 
 See `config/default_config.json` for a complete example.
 
-## Key Components
-
-- `components/models.py`: Model loading and configuration
-- `components/trainer.py`: Custom trainer for knowledge distillation
-- `components/dataset.py`: Dataset handling and processing
-- `components/formatters.py`: Data formatting utilities
-- `scripts/local/`: Local training scripts
-
-## Features in Detail
-
-### Pre-computed Logits
-Save memory by pre-computing teacher logits:
-```python
-python scripts/local/generate_logits.py --config your_config.json
-```
-
-### LoRA Integration
-Enable efficient fine-tuning with LoRA by configuring in your JSON:
-```json
-"lora": {
-    "enable_training": true,
-    "r": 8,
-    "alpha": 16
-}
-```
-
-### Quantization
-Enable 4-bit quantization:
-```json
-"quantization": {
-    "enabled": true
-}
-```
-
-## Requirements
-
-- Python 3.8+
-- PyTorch 2.0+
-- Transformers
-- Accelerate
-- PEFT
-- TRL
-- See `requirements.txt` for complete list
-
-## License
-
-[Add your license information here]
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions from the community! If you have ideas for improvements, new features, or bug fixes, please feel free to open an issue or submit a pull request.
 
 ## Citation
 
-If you use this toolkit in your research, please cite:
+For any technical questions or issues, please open an issue in this repository. We appreciate your feedback and support!
 
-```bibtex
-[Add your citation information here]
-```
