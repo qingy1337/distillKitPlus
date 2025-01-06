@@ -103,7 +103,17 @@ def gen_logits(dataset, config=None):
         output_vol.commit()
 
 def main():
+    config = DEFAULT_CONFIG
+    config.update({
+        "models": {
+            "teacher": "meta-llama/Llama-3.1-70B-Instruct",
+            "student": "meta-llama/Llama-3.1-8B-Instruct",
+        }
+    })
+    
     dataset = load_from_disk("/Users/agokrani/Documents/experiments/aideml/wsdm/wsdm2024-cot-dataset/shard_0")
+    tokenizer = setup_tokenizer(config["models"]["teacher"], config)
+    
     dataset = dataset.map(
         format_for_tokenization(tokenizer),
         batched=True,
