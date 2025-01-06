@@ -320,63 +320,7 @@ class DistillationDataset(Dataset):
         """Default formatting function that just passes through the text"""
         return {"text": examples["text"] if "text" in examples else examples}
 
-class LogitsTrainer(SFTTrainer):
-    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        inputs = {k: v.to(model.device) if hasattr(v, 'to') else v for k, v in inputs.items()}
-        
-        teacher_logits = None
-        if 'logits' in inputs:
-            teacher_logits = inputs.pop('logits')
-        student_model = model.module if hasattr(model, 'module') else model
-        
-        # Get student outputs
-        student_outputs = student_model(**inputs)
-        
-        # If pre-computed logits exist in inputs, use those instead of computing teacher outputs
-        if teacher_logits is not None:
-            # Trim teacher logits to match student sequence length if needed
-            if teacher_logits.size(1) > student_outputs.logits.size(1):
-                teacher_logits = teacher_logits[:, :student_outputs.logits.size(1), :]
-        else:
-            # Original path - compute teacher logits if not provided
-            assert hasattr(self, 'teacher_model'), "Teacher model is required for distillation when precomputed logits aren't provided."
-            self.teacher_model = self.teacher_model.to(model.device)
-            teacher_model = self.teacher_model.module if hasattr(self.teacher_model, 'module') else self.teacher_model
-            with torch.no_grad():
-                teacher_outputs = teacher_model(**inputs)
-                teacher_logits = teacher_outputs.logits
-        
-        custom_loss = self.distillation_loss(student_outputs.logits, teacher_logits, inputs, student_outputs.loss)
-        return (custom_loss, student_outputs) if return_outputs else custom_loss
-
-    def distillation_loss(self, student_logits, teacher_logits, inputs, original_loss):
-        # Scale logits by temperature
-        student_logits_scaled = student_logits / config["distillation"]["temperature"]
-        teacher_logits_scaled = teacher_logits / config["distillation"]["temperature"]
-
-        # Handle vocabulary size mismatch
-        if teacher_logits_scaled.size(-1) > student_logits_scaled.size(-1):
-            # Case: Teacher vocab larger than student vocab
-            teacher_logits_scaled = teacher_logits_scaled[..., :student_logits_scaled.size(-1)]
-        elif teacher_logits_scaled.size(-1) < student_logits_scaled.size(-1):
-            # Case: Student vocab larger than teacher vocab
-            # Pad teacher logits with negative infinity to ensure zero probability after softmax
-            # This prevents assigning artificial probability mass to tokens the teacher never saw
-            padding_size = student_logits_scaled.size(-1) - teacher_logits_scaled.size(-1)
-            padding = torch.full(
-                (teacher_logits_scaled.size(0), teacher_logits_scaled.size(1), padding_size),
-                float('-inf'),  # Using -inf ensures exactly 0 probability after softmax
-                device=teacher_logits_scaled.device
-            )
-            teacher_logits_scaled = torch.cat([teacher_logits_scaled, padding], dim=-1)
-        
-        loss_kd = F.kl_div(
-            F.log_softmax(student_logits_scaled, dim=-1),
-            F.softmax(teacher_logits_scaled, dim=-1),
-            reduction='batchmean'
-        ) * (config["distillation"]["temperature"] ** 2) / student_logits.size(1)
-        print(f"KD Loss: {loss_kd}")
-        return config["distillation"]["alpha"] * loss_kd + (1 - config["distillation"]["alpha"]) * original_loss
+from components.trainer import LogitsTrainer
 
 @app.function(
     gpu=modal.gpu.A100(count=1, size="80GB"),
