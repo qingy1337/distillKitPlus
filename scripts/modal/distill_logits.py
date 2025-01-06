@@ -95,8 +95,13 @@ def train(config=None):
     output_vol.commit()
 
 def main():
-    config = DEFAULT_CONFIG
-  
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, help='Path to config file')
+    args = parser.parse_args()
+    
+    config = load_config(args.config)  # Will load default if args.config is None
+    
     with app.run():
         train.remote(config)
 
