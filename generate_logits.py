@@ -33,7 +33,7 @@ def generate_logits_for_batch(model, sequences):
     
     return outputs.logits
 
-from components.formatters import comparison_format
+from components.formatters import comparison_format, format_for_tokenization
 
 def gen_logits(dataset):
     # Setup model configuration
@@ -91,7 +91,7 @@ def main():
    
     # Tokenize the dataset
     dataset = dataset.map(
-        tokenize(tokenizer),
+        format_for_tokenization(tokenizer),
         batched=True,
     )
     

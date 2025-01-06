@@ -82,7 +82,7 @@ def generate_logits_for_batch(model, sequences, max_seq_len):
     return logits
 
 
-from components.formatters import comparison_format
+from components.formatters import comparison_format, format_for_tokenization
 
 @app.function(
     gpu=modal.gpu.A100(count=1, size="80GB"),
@@ -166,7 +166,7 @@ def main():
    
     # Tokenize the dataset
     dataset = dataset.map(
-        tokenize(tokenizer),
+        format_for_tokenization(tokenizer),
         batched=True,
     )
     select_indicies = list(range(100, 200))
