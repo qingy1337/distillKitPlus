@@ -33,31 +33,7 @@ def generate_logits_for_batch(model, sequences):
     
     return outputs.logits
 
-def tokenize(tokenizer, *args, **kwargs):
-    def tokenize_func(examples):   
-        texts = []
-        for i in range(len(examples['prompt'])):
-            texts.append(
-                tokenizer.apply_chat_template(
-                    [
-                        {
-                            "role": "system",
-                            "content": """Let's think step by step to judge which response is better for the given prompt. Please keep your thoughts clear and concise and at max around 300 words. The ouput should be in the following format:\n```## Rationale: <Your reasoning>\n## Winner: <model_a or model_b>```\n\n""",
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Prompt: {examples['prompt'][i]}\n\nResponse A: ```{examples['response_a'][i]}```\n\nResponse B: ```{examples['response_b'][i]}```\n\n",
-                        },
-                        {
-                            "role": "assistant",
-                            "content": f"## Rationale: {examples['rationale'][i]}\n## Winner: {examples['winner'][i]}",
-                        },
-                    ],
-                    tokenize=False,
-                )
-            )
-        return {"text": texts}
-    return tokenize_func
+from components.formatters import comparison_format
 
 def gen_logits(dataset):
     # Setup model configuration
