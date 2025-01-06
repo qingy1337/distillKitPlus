@@ -1,1 +1,1 @@
-# Modal scripts initialization
+

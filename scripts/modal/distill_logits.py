@@ -7,7 +7,7 @@ from components.dataset import DistillationDataset
 from components.trainer import LogitsTrainer
 from components.formatters import comparison_format
 
-from transformers import DataCollatorForCompletionOnlyLM, SFTConfig
+from trl import DataCollatorForCompletionOnlyLM, SFTConfig
 
 VOL_MOUNT_PATH = Path("/vol")
 output_vol = modal.Volume.from_name("finetune-volume", create_if_missing=True)
@@ -18,7 +18,7 @@ image = (
     .pip_install(
         "accelerate", "transformers", "torch", "datasets",
         "tensorboard", "trl==0.12.2", "peft", "bitsandbytes",
-        "wheel", "tensorflow", "h5py"
+        "wheel", "tensorflow", "h5py", "tf-keras"
     ).run_commands("pip install flash-attn --no-build-isolation")
 )
 
@@ -40,12 +40,21 @@ def train(config=None):
     student_tokenizer = models["student_tokenizer"]
     teacher_model = models.get("teacher_model")
     
+    # Ideally teacher vocab size should be provided in the config file. If not we will infer it from teacher model or student model depending on 
+    # the configuration. Note: If teacher model is not loaded due to logits file. It will be inferred from student model.
+    if config["models"]["teacher_vocab_size"] is not None: 
+        teacher_vocab_size = config["models"]["teacher_vocab_size"]    
+    elif teacher_model is not None:
+        teacher_vocab_size = teacher_model.config.vocab_size
+    else: 
+        teacher_vocab_size = student_model.config.vocab_size 
+
     # Initialize dataset
     dataset = DistillationDataset(
         file_path=config["dataset"]["name"],
         tokenizer=student_tokenizer,
         max_seq_length=config["tokenizer"]["max_length"],
-        teacher_vocab_size=config["models"]["teacher_vocab_size"],
+        teacher_vocab_size=teacher_vocab_size,
         format_func=comparison_format(student_tokenizer),
         split=config["dataset"]["split"],
         num_samples=config["dataset"]["num_samples"],
@@ -67,7 +76,7 @@ def train(config=None):
         tokenizer=student_tokenizer,
         args=training_args,
         data_collator=DataCollatorForCompletionOnlyLM(
-            "<|im_start|>assistant\n",
+            "<|start_header_id|>assistant<|end_header_id|>\n\n",
             tokenizer=student_tokenizer
         ),
         temperature=config["distillation"]["temperature"],
@@ -79,24 +88,15 @@ def train(config=None):
 
     # Train and save
     trainer.train(resume_from_checkpoint=config["training"]["resume_from_checkpoint"])
-    trainer.save_model(os.path.join(VOL_MOUNT_PATH, "final_model"))
+    
+    save_path = Path(config["training"]["output_dir"]) / "final-distilled-checkpoint"
+    trainer.save_model(save_path)
+    
     output_vol.commit()
 
 def main():
     config = DEFAULT_CONFIG
-    config.update({
-        "models": {
-            "teacher": None,  # Not needed if using logits file
-            "student": "meta-llama/Llama-3.1-8B-Instruct",
-            "teacher_vocab_size": 32000
-        },
-        "dataset": {
-            "name": "/vol/dataset",
-            "logits_file": "/vol/logits/distillation_logits.tfrecord",
-            "num_samples": 100
-        }
-    })
-    
+  
     with app.run():
         train.remote(config)
 

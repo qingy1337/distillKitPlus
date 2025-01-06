@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Optional, Union, Any
 import torch
 from peft import PeftModel, LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -64,7 +65,9 @@ def get_model_kwargs(config: Dict[str, Any]) -> Dict[str, Any]:
 def load_base_model(
     model_name: str,
     config: Dict[str, Any],
-    prepare_for_kbit: bool = False
+    prepare_for_kbit: bool = False,
+    cache_dir=None,
+    save_base_model_to_cache=False
 ) -> AutoModelForCausalLM:
     """
     Load base model with proper configuration.
@@ -78,8 +81,13 @@ def load_base_model(
         Loaded model instance
     """
     model_kwargs = get_model_kwargs(config)
-    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    if cache_dir is not None and os.path.exists(cache_dir):
+        model_name=cache_dir
     
+    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    if save_base_model_to_cache and  not os.path.exists(cache_dir):
+        model.save_pretrained(cache_dir)
+
     if prepare_for_kbit:
         model = prepare_model_for_kbit_training(model)
     
@@ -128,7 +136,7 @@ def load_adapter(
         Model with loaded adapter
     """
     model = PeftModel.from_pretrained(model, adapter_path)
-    
+
     # Ensure all LoRA parameters are trainable
     for name, param in model.named_parameters():
         if "lora" in name.lower():

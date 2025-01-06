@@ -177,22 +177,6 @@ class LogitsTrainer(SFTTrainer):
             F.softmax(teacher_logits_scaled, dim=-1),
             reduction='batchmean'
         ) * (self.temperature ** 2) / student_logits.size(1)
-
+        
         # Combine KL divergence loss with original task loss
         return self.alpha * kd_loss + (1 - self.alpha) * original_loss
-
-    def save_model(self, output_dir: Optional[str] = None) -> None:
-        """
-        Save the model, ensuring proper handling of PEFT models.
-        
-        Args:
-            output_dir: Directory to save the model to
-        """
-        if output_dir is None:
-            output_dir = self.args.output_dir
-            
-        # Handle PEFT models properly
-        if hasattr(self.model, 'save_pretrained'):
-            self.model.save_pretrained(output_dir)
-        else:
-            super().save_model(output_dir)
