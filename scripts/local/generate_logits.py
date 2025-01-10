@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 from pathlib import Path
 import tensorflow as tf
-from datasets import load_from_disk, load_dataset
+from datasets import load_from_disk, load_dataset as hf_load_dataset
 
 from components.config import load_config
 from components.formatters import comparison_format
@@ -36,7 +36,7 @@ def load_dataset(config):
     if config["dataset"]["split"] is None: 
         dataset = load_from_disk(config["dataset"]["name"])
     else: 
-        dataset = load_dataset(config["dataset"]["name"], split=config["dataset"]["split"])
+        dataset = hf_load_dataset(config["dataset"]["name"], split=config["dataset"]["split"])
     tokenizer = setup_tokenizer(config["models"]["teacher"], config)
     
     dataset = dataset.map(
