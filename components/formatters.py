@@ -15,16 +15,12 @@ def comparison_format(tokenizer) -> Callable:
                 tokenizer.apply_chat_template(
                     [
                         {
-                            "role": "system",
-                            "content": """Let's think step by step to judge which response is better for the given prompt. Please keep your thoughts clear and concise and at max around 300 words. The output should be in the following format:\n```## Rationale: <Your reasoning>\n## Winner: <model_a or model_b>```\n\n""",
-                        },
-                        {
                             "role": "user",
-                            "content": f"Prompt: {examples['prompt'][i]}\n\nResponse A: ```{examples['response_a'][i]}```\n\nResponse B: ```{examples['response_b'][i]}```\n\n",
+                            "content": examples['prompt'],
                         },
                         {
                             "role": "assistant",
-                            "content": f"## Rationale: {examples['rationale'][i]}\n## Winner: {examples['winner'][i]}",
+                            "content": examples['response'],
                         },
                     ],
                     tokenize=False
